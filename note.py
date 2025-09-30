@@ -1,9 +1,9 @@
 import re
 
-note_marks = ["(*)", "**"]
-note_mark_re = re.compile(f"({"|".join(map(re.escape, note_marks))})")
 min_context_before = 200 #characters
 min_context_after = 50 #characters
+note_marks = ["(*)", "**"]
+note_mark_re = re.compile(f"({"|".join(map(re.escape, note_marks))})")
 
 def is_a_note(line):
   return note_mark_re.search(line) != None

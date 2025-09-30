@@ -1,16 +1,27 @@
 import dropbox
+import pyperclip
 from contextlib import closing
 from datetime import date, timedelta
 from note import Note, is_a_note
+from sys import exit
 
-# get a new one here https://www.dropbox.com/developers/apps/info/h74acmduf2e68vq
-# TODO: auth that doesn't require replacing this regularly (oauth with refresh I guess)
-token_file = ".access_token"
+dropbox_app_url = "https://www.dropbox.com/developers/apps/info/h74acmduf2e68vq"
 postbox_directory = "/Apps/Postbox/A/"
 
-def get_access_token():
-  with open(token_file, "r") as f:
-    return f.readline().rstrip()
+def init_dropbox():
+  # TODO: auth that doesn't require replacing this regularly (oauth with refresh I guess)
+  print("Generate a dev access token here and copy it: " + dropbox_app_url)
+  input("Don't paste it. Just hit enter once you've copied it.")
+  access_token = pyperclip.paste().strip()
+  dbx = dropbox.Dropbox(access_token)
+  try:
+    user = dbx.users_get_current_account()
+  except Exception as e:
+    print(f"Couldn't auth to Dropbox. :( Here's what I know:\n  {e}\nDouble-check your token?")
+    exit(1)
+  else:
+    print(f"Authed to Dropbox. Hi, {user.name.familiar_name}.")
+  return dbx
 
 def get_since_date():
   two_weeks_ago = date.today() - timedelta(days=15)
@@ -77,12 +88,10 @@ def find_notes(file, lines):
   return notes
 
 def s(i):
-  if i == 1:
-    return ""
-  return "s"
+  return "" if i == 1 else "s"
 
 def main():
-  dbx = dropbox.Dropbox(get_access_token())
+  dbx = init_dropbox()
   since_date = get_since_date() 
   files = get_files_since(dbx, since_date)
   print(f"\nChecking files since {since_date}. Found {len(files)} file{s(len(files))}.")
