@@ -10,7 +10,7 @@ def is_a_note(line):
 
 class Note(object):
   def __init__(self, file, cursor, lines):
-    self.file
+    self.date = file.name.split(" ", maxsplit=1)[0]
     self.cursor = cursor
     self.lines = lines
     self.before_mark, self.note_mark, self.after_mark = note_mark_re.split(lines[cursor], maxsplit=1)
@@ -19,7 +19,7 @@ class Note(object):
     self.init_context()
 
   def init_context(self):
-    while len(self.before_context) < min_context_before and self.cursor - self.before_offset >= 0:
+    while len(self.before_context) < min_context_before and self.before_offset <= self.cursor:
       self.before_offset += 1
     while len(self.after_context) < min_context_after and self.cursor + self.after_offset < len(self.lines):
       self.after_offset += 1
@@ -32,5 +32,23 @@ class Note(object):
   def after_context(self):
     return self.after_mark + "\n" + "\n".join(self.lines[self.cursor+1:self.cursor+self.after_offset+1])
 
+  @property
+  def context(self):
+    return (self.before_context + self.note_mark + self.after_context).strip()
+
+  def add_before(self):
+    if self.before_offset < self.cursor:
+      self.before_offset +=1
+      return True
+    else:
+      return False
+
+  def add_after(self):
+    if self.after_offset + self.cursor < len(self.lines)-1:
+      self.after_offset +=1
+      return True
+    else:
+      return False
+
   def __str__(self):
-    return self.file.name + "\n" + (self.before_context + self.note_mark + self.after_context).strip()
+    return f"({self.date}) {getattr(self, "note", self.context.replace("\n", " / "))}"

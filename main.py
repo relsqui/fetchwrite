@@ -1,16 +1,12 @@
 import dropbox
-import re
 from contextlib import closing
-from datetime import datetime, timedelta, fromisoformat
+from datetime import datetime, timedelta
+from note import Note, is_a_note
 
 # get a new one here https://www.dropbox.com/developers/apps/info/h74acmduf2e68vq
 # TODO: auth that doesn't require replacing this regularly (oauth with refresh I guess)
 token_file = ".access_token"
 postbox_directory = "/Apps/Postbox/A/"
-note_marks = ["(*)", "**"]
-note_mark_re = re.compile(f"({"|".join(map(re.escape, note_marks))})")
-min_context_before = 200 #characters
-min_context_after = 50 #characters
 
 def get_access_token():
   with open(token_file, "r") as f:
@@ -22,7 +18,7 @@ def get_files_since(dbx, since_date):
   # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#dropbox.dropbox_client.Dropbox.files_list_folder
   for entry in dbx.files_list_folder(postbox_directory).entries:
     # entry type: https://dropbox-sdk-python.readthedocs.io/en/latest/api/files.html#dropbox.files.FileMetadata
-    if fromisoformat(entry.client_modified) > since_date:
+    if entry.client_modified > since_date:
       recent_files.append(entry)
   return recent_files
 
@@ -34,37 +30,50 @@ def get_file_lines(dbx, file):
   with closing(response) as r:
     return r.content.decode("utf-8").splitlines()
 
-def is_a_note(line):
-  return note_mark_re.search(line) != None
+def adjust_note(note):
+  while True:
+    print()
+    print(note.context)
+    command = input(f"\n({note.date}) add context (b)efore or (a)fter, make (n)ote, (s)kip> ") or "?"
+    match command[0]:
+      case "b":
+        if not note.add_before():
+          print("This is the beginning of the file.")
+      case "a":
+        if not note.add_after():
+          print("This is the end of the file.")
+      case "n":
+        note.note = command[1:].strip()
+        return True
+      case "s":
+        return False
+      case _:
+        print("Type b, a, n <note>, or s.")
 
 def find_notes(file, lines):
+  notes = []
   for cursor in range(len(lines)):
     line = lines[cursor]
     if not is_a_note(line):
       continue
-    line_parts = note_mark_re.split(line, maxsplit=1)
-    before_context = line_parts[0]
-    note_mark = line_parts[1]
-    after_context = line_parts[2]
-    before_offset = 0
-    while len(before_context) < min_context_before and cursor - before_offset >= 0:
-      before_offset += 1
-      before_context = lines[cursor - before_offset] + "\n" + before_context
-    after_offset = 0
-    while len(after_context) < min_context_after and cursor + after_offset < len(lines):
-      after_offset += 1
-      after_context += "\n" + lines[cursor + after_offset]
-    print(file.client_modified)
-    print(before_context + note_mark + after_context)
-    input()
+    note = Note(file, cursor, lines)
+    if adjust_note(note):
+      notes.append(note)
+  return notes
 
 def main():
   dbx = dropbox.Dropbox(get_access_token())
   since_date = datetime.today() - timedelta(days=14)
-  filenames = get_files_since(dbx, since_date)
-  for file in filenames:
+  files = get_files_since(dbx, since_date)[:1]
+  files.sort(key=lambda f: f.name)
+  notes = []
+  for file in files:
     lines = get_file_lines(dbx, file)
-    find_notes(file, lines)
+    notes.extend(find_notes(file, lines))
+  print()
+  for note in notes:
+    print(f"- {note}")
+  print()
 
 if __name__ == "__main__":
   main()
