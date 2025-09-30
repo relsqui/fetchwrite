@@ -1,26 +1,25 @@
 # fetchwrite
 
-Fetches dated files from a Freewrite sync in Dropbox, checks for "notes" marked with a sentinel string, and provides a minimal interactive interface for browsing and summarizing them.
+Fetches dated files from a Freewrite sync in Dropbox, searches for "notes" marked with a sentinel string, and provides a minimal interactive interface for browsing and summarizing them.
 
 Only processes file content in-memory; doesn't save anything.
 
-(It's for reviewing journal entries for therapy notes before taking a video call on my work computer.)
+(It's for reviewing journal entries for therapy notes before having a remote appointment on my work computer.)
 
-## Usage
+## Setup
+- [Create a Dropbox app](https://www.dropbox.com/developers/apps) with `files.content.read` permission
+- Rename `config.toml.example` to `config.toml`
+- Add the "App key" from your app settings page to `config.toml`
+- Update other configuration values if you want to
 
 ```sh
 # if necessary:
 # pipx install pipenv
 pipenv install
-pipenv run python main.py
 ```
 
-## Configuration
+## Usage
 
-- In main.py:
-  - `dropbox_app_url` - the settings page of a Dropbox app with read access
-  - `postbox_directory` - the path to the files you want to browse
-- In notes.py:
-  - `min_context_before` - how many characters to show before each note mark
-  - `min_context_after` - the same but for after the mark
-  - `note_marks` - a list of strings that identify part of a file as a note to review
+```sh
+pipenv run python main.py
+```

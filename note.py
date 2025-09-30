@@ -1,28 +1,17 @@
-import re
-
-min_context_before = 200 #characters
-min_context_after = 50 #characters
-note_marks = ["(*)", "**"]
-note_mark_re = re.compile(f"({"|".join(map(re.escape, note_marks))})")
-
-def is_a_note(line):
-  return note_mark_re.search(line) != None
-
 class Note(object):
-  def __init__(self, cursor, lines, date):
-    # freewrite saves files starting with an iso date
+  def __init__(self, config, cursor, lines, date):
     self.cursor = cursor
     self.lines = lines
     self.date = date
-    self.init_context()
+    self.init_context(config)
 
-  def init_context(self):
-    self.before_mark, self.note_mark, self.after_mark = note_mark_re.split(self.lines[self.cursor], maxsplit=1)
+  def init_context(self, config):
+    self.before_mark, self.note_mark, self.after_mark = config["note_mark_re"].split(self.lines[self.cursor], maxsplit=1)
     self.before_offset = 0
     self.after_offset = 0
-    while len(self.before_context) < min_context_before and self.before_offset <= self.cursor:
+    while len(self.before_context) < config["min_context_before"] and self.before_offset <= self.cursor:
       self.before_offset += 1
-    while len(self.after_context) < min_context_after and self.cursor + self.after_offset < len(self.lines):
+    while len(self.after_context) < config["min_context_after"] and self.cursor + self.after_offset < len(self.lines):
       self.after_offset += 1
 
   @property

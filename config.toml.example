@@ -1,0 +1,17 @@
+# From your Dropbox app settings page
+dropbox_app_key = "YOUR_KEY_HERE"
+
+# Path to the Dropbox directory with files to search for notes
+postbox_directory = "/Apps/Postbox/A/"
+
+# How far back should we look for files by default?
+# (You can set a specific date instead for any session)
+lookback = 7 # days
+
+# How do we identify notes within those files?
+note_marks = ["!!", "**"]
+
+# How much context around the note mark do you want to see from the start?
+# (You can adjust the context interactively while browsing notes)
+min_context_before = 200 # characters
+min_context_after = 50 # characters
