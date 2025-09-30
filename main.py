@@ -61,7 +61,7 @@ def get_since_date(config):
 
 
 def date_string_from_filename(filename):
-    # freewrite saves files starting with an iso date
+    # Freewrite saves files starting with an iso date
     return filename.split(" ", maxsplit=1)[0]
 
 
@@ -75,8 +75,6 @@ def get_files_since(config, dbx, since_date):
 
 
 def get_file_lines(config, dbx, file):
-    # _ is the metadata we already have
-    # response is one of these: https://docs.python-requests.org/en/latest/api/#requests.Response
     _, response = dbx.files_download(config["postbox_directory"] + file.name)
     response.raise_for_status()
     with closing(response) as r:
