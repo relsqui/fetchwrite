@@ -1,6 +1,6 @@
 import dropbox
 from contextlib import closing
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from note import Note, is_a_note
 
 # get a new one here https://www.dropbox.com/developers/apps/info/h74acmduf2e68vq
@@ -12,13 +12,28 @@ def get_access_token():
   with open(token_file, "r") as f:
     return f.readline().rstrip()
 
+def get_since_date():
+  two_weeks_ago = date.today() - timedelta(days=15)
+  while True:
+    date_string = input(f"Check files since? ({two_weeks_ago}) ")
+    if len(date_string) == 0:
+      return two_weeks_ago
+    try:
+      return date.fromisoformat(date_string)
+    except ValueError:
+      print("Didn't understand that. Try YYYY-MM-DD or hit enter to accept the default.")
+
+def date_string_from_filename(filename):
+  # freewrite saves files starting with an iso date (and I fixed the one from before I set the time)
+  return filename.split(" ", maxsplit=1)[0]
+
 def get_files_since(dbx, since_date):
   recent_files = []
   # if this starts to be too much for one page, see here for how to work with a cursor
   # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#dropbox.dropbox_client.Dropbox.files_list_folder
   for entry in dbx.files_list_folder(postbox_directory).entries:
     # entry type: https://dropbox-sdk-python.readthedocs.io/en/latest/api/files.html#dropbox.files.FileMetadata
-    if entry.client_modified > since_date:
+    if date.fromisoformat(date_string_from_filename(entry.name)) > since_date:
       recent_files.append(entry)
   return recent_files
 
@@ -34,7 +49,7 @@ def adjust_note(note):
   while True:
     print()
     print(note.context)
-    command = input(f"\n({note.date}) add context (b)efore or (a)fter, make (n)ote, (s)kip> ") or "?"
+    command = input(f"\n({note.date}) Add context (b)efore or (a)fter, make (n)ote, (s)kip> ") or "?"
     match command[0]:
       case "b":
         if not note.add_before():
@@ -56,15 +71,21 @@ def find_notes(file, lines):
     line = lines[cursor]
     if not is_a_note(line):
       continue
-    note = Note(file, cursor, lines)
+    note = Note(cursor, lines, date_string_from_filename(file.name))
     if adjust_note(note):
       notes.append(note)
   return notes
 
+def s(i):
+  if i == 1:
+    return ""
+  return "s"
+
 def main():
   dbx = dropbox.Dropbox(get_access_token())
-  since_date = datetime.today() - timedelta(days=14)
-  files = get_files_since(dbx, since_date)[:1]
+  since_date = get_since_date() 
+  files = get_files_since(dbx, since_date)
+  print(f"\nChecking files since {since_date}. Found {len(files)} file{s(len(files))}.")
   files.sort(key=lambda f: f.name)
   notes = []
   for file in files:
@@ -76,4 +97,7 @@ def main():
   print()
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    print()

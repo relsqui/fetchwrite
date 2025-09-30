@@ -9,16 +9,17 @@ def is_a_note(line):
   return note_mark_re.search(line) != None
 
 class Note(object):
-  def __init__(self, file, cursor, lines):
-    self.date = file.name.split(" ", maxsplit=1)[0]
+  def __init__(self, cursor, lines, date):
+    # freewrite saves files starting with an iso date
     self.cursor = cursor
     self.lines = lines
-    self.before_mark, self.note_mark, self.after_mark = note_mark_re.split(lines[cursor], maxsplit=1)
-    self.before_offset = 0
-    self.after_offset = 0
+    self.date = date
     self.init_context()
 
   def init_context(self):
+    self.before_mark, self.note_mark, self.after_mark = note_mark_re.split(self.lines[self.cursor], maxsplit=1)
+    self.before_offset = 0
+    self.after_offset = 0
     while len(self.before_context) < min_context_before and self.before_offset <= self.cursor:
       self.before_offset += 1
     while len(self.after_context) < min_context_after and self.cursor + self.after_offset < len(self.lines):
@@ -38,14 +39,14 @@ class Note(object):
 
   def add_before(self):
     if self.before_offset < self.cursor:
-      self.before_offset +=1
+      self.before_offset += 1
       return True
     else:
       return False
 
   def add_after(self):
     if self.after_offset + self.cursor < len(self.lines)-1:
-      self.after_offset +=1
+      self.after_offset += 1
       return True
     else:
       return False
