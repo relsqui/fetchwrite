@@ -56,7 +56,8 @@ def get_since_date(config):
 
 def date_string_from_filename(filename):
   # Freewrite saves files starting with an iso date
-  return filename.split(" ", maxsplit=1)[0]
+  # and ending with .txt
+  return filename[:-4].split(" ", maxsplit=1)[0]
 
 
 def get_files_since(config, dbx, since_date):
